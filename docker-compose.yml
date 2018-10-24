@@ -1,0 +1,52 @@
+version: '3'
+services:
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 9080:80
+    links:
+      - front
+      - consumer
+  front:
+    image: node:8-alpine
+    command: ash -c "npm install && npm start"
+    working_dir: /app
+    volumes:
+      - ./front:/app
+      - /app/node_modules
+  producer:
+    image: node:8-alpine
+    command: ash -c "/wait-for.sh rabbit:5672 && npm install && npm start"
+    working_dir: /app
+    volumes:
+      - ./producer:/app
+      - ./wait-for.sh:/wait-for.sh
+      - /app/node_modules
+    depends_on:
+      - rabbit
+    links:
+      - rabbit
+  consumer:
+    image: node:8-alpine
+    command: ash -c "/wait-for.sh rabbit:5672 && npm install && npm start"
+    working_dir: /app
+    volumes:
+      - ./consumer:/app
+      - ./wait-for.sh:/wait-for.sh
+      - /app/node_modules
+    depends_on:
+      - rabbit
+    links:
+      - rabbit
+  rabbit:
+    image: rabbitmq:3-management
+    ports:
+      - "8080:15672"
+      - "5672:5672"
+      - "5671:5671"
+    environment: 
+      RABBITMQ_DEFAULT_PASS: pass
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_VHOST: vhost

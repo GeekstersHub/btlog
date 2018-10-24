@@ -1,0 +1,16 @@
+{
+  "name": "producer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "blockchain.info": "^2.12.1",
+    "lodash": "^4.17.11",
+    "rabbit.js": "^0.4.4"
+  }
+}
