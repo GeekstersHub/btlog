@@ -10,16 +10,20 @@ services:
       - front
       - consumer
   front:
-    image: node:8-alpine
+    image: node:10-alpine
     command: ash -c "npm install && npm start"
     working_dir: /app
+    environment:
+      REACT_APP_WS: ws://localhost:9080/ws
     volumes:
       - ./front:/app
       - /app/node_modules
   producer:
-    image: node:8-alpine
+    image: node:10-alpine
     command: ash -c "/wait-for.sh rabbit:5672 && npm install && npm start"
     working_dir: /app
+    environment:
+      RABBIT_HOST: rabbit
     volumes:
       - ./producer:/app
       - ./wait-for.sh:/wait-for.sh
@@ -32,6 +36,8 @@ services:
     image: node:8-alpine
     command: ash -c "/wait-for.sh rabbit:5672 && npm install && npm start"
     working_dir: /app
+    environment:
+      RABBIT_HOST: rabbit
     volumes:
       - ./consumer:/app
       - ./wait-for.sh:/wait-for.sh

@@ -1,4 +1,4 @@
-const rabbitJs = require('rabbit.js');
+const amqp = require('amqplib');
 const http = require('http');
 const _ = require('lodash');
 
@@ -20,14 +20,19 @@ server.on('listening', () => {
     console.log(`Server listening on ${port} port`);
 });
 
-const context = rabbitJs.createContext('amqp://user:pass@rabbit/vhost');
+const rabbitHost = process.env.RABBIT_HOST || 'localhost';
 
-context.on('ready', function() {
-    const sub = context.socket('SUB');
-    sub.connect('transactions', function() {
-        sub.setEncoding('utf8');
-        sub.on('data', (data) => {
-            const transaction = JSON.parse(data);
+const queueName = 'transaction';
+
+amqp.connect(`amqp://user:pass@${rabbitHost}/vhost`)
+.then((connection) => connection.createChannel(connection))
+.then((channel) => {
+    return channel.assertQueue(queueName).then(() => {
+        return channel.consume(queueName, (msg) => {
+            if (msg === null) {
+                return;
+            }
+            const transaction = JSON.parse(msg.content.toString());
             const outs = _.filter(transaction.out, (out) => _.includes(addresses, out.addr));
             const transactionAmount = _.reduce(outs, (acc, out) => {
                 return acc + out.value;
@@ -38,6 +43,7 @@ context.on('ready', function() {
             const response = Object.assign({}, transaction, {tokenAmount});
             console.log(response);
             ws.broadcast(response);
+            channel.ack(msg);
         });
     });
-});
+}).catch(console.warn);
